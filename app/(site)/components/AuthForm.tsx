@@ -18,7 +18,7 @@ const AuthForm = () => {
         else
             setVariant('LOGIN');
     }, [variant]);
-
+    // added comment
     const { register,
         handleSubmit,
         formState: {
