@@ -5,7 +5,9 @@ import { useCallback, useState } from "react";
 import { FieldValues, SubmitHandler, useForm } from "react-hook-form";
 import AuthSocialButton from "./AuthSocialButton";
 import { BsGithub, BsGoogle } from 'react-icons/bs';
+import { signIn } from 'next-auth/react';
 import axios from "axios";
+import toast from "react-hot-toast";
 
 type Variant = 'LOGIN' | 'REGISTER';
 
@@ -37,35 +39,40 @@ const AuthForm = () => {
         setIsLoading(true);
         if (variant === 'REGISTER') {
             //axios register
-            axios.post('/api/register', data);
+            axios.post('/api/register', data)
+                .catch(() => toast.error('Something went wrong!'))
+                .finally(() => setIsLoading(false));
         }
 
         if (variant === 'LOGIN') {
             //next auth signin
+            signIn('credentials', {
+                ...data, redirect: false
+            }).then((callback) => {
+                if (callback?.error)
+                    toast.error('Invaliid credentials.');
+                if (callback?.ok && !callback.error)
+                    toast.success('Logged In!');
+            }).finally(() => setIsLoading(false));
         }
     }
 
-    const socialActions = (actions: string) => {
+    const socialAction = (action: string) => {
         setIsLoading(true);
+        signIn(action, { redirect: false })
+            .then((callback) => {
+                if (callback?.error)
+                    toast.error('Invlaid Credentials');
+                if (callback?.ok && !callback.error)
+                    toast.success('Logged In');
+            }).finally(() => {
+                setIsLoading(false); console.log('social login action completed!')
+            });
     }
 
     return (
-        <div className="
-        mt-8
-        sm:mx-auto
-        sm:w-full
-        sm:max-w-md
-        "
-        >
-            <div className="
-            bg-white
-            px-4
-            py-8
-            shadow
-            sm:rounded-lg
-            sm:px-10
-            "
-            >
+        <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+            <div className="bg-white px-4 py-8 shadow sm:rounded-lg sm:px-10">
                 <form className="space-y-6"
                     onSubmit={handleSubmit(onSubmit)}
                 >
@@ -122,24 +129,16 @@ const AuthForm = () => {
                     <div className=" mt-6 flex gap-2">
                         <AuthSocialButton
                             icon={BsGithub}
-                            onClick={() => socialActions('github')}
+                            onClick={() => socialAction('github')}
                         />
                         <AuthSocialButton
                             icon={BsGoogle}
-                            onClick={() => socialActions('google')}
+                            onClick={() => socialAction('google')}
                         />
                     </div>
                 </div>
 
-                <div className="
-                flex
-                gap-2
-                justify-center
-                text-sm 
-                mt-6
-                px-2
-                text-gray-500
-                ">
+                <div className="flex gap-2 justify-center text-sm mt-6 px-2 text-gray-500">
                     <div>
                         {variant === 'LOGIN' ? 'New to Messenger?' : 'Already have an Account?'}
                     </div>
